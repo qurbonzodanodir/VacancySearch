@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Union
+from pydantic import BaseModel,Field
+from typing import Union,Optional
 
 
 class InsertVacancies(BaseModel):
@@ -84,3 +84,24 @@ class LoginUser(BaseModel):
     phone_number:str
     password:str
 
+class FilterVacancy(BaseModel):
+    company_name:Union[str,None]=None
+    category_name:Union[str,None]=None
+    address:Union[str,None]=None
+    salary:Union[float,None]=None
+    type_employment:Union[str,None]=None
+
+
+class LoginModel(BaseModel):
+    phone_number: str = Field(..., max_length=20)
+    password: str = Field(..., max_length=20)
+
+class RegistrationModel(BaseModel):
+    first_name: str = Field(..., max_length=20)
+    last_name: str = Field(..., max_length=20)
+    gender: str = Field(..., max_length=20)
+    phone_number:str = Field(..., max_length=20)
+    password: str = Field(..., max_length=20)
+
+class DeviceTokenModel(BaseModel):
+    dtoken: str

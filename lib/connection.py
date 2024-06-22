@@ -1,12 +1,12 @@
 from contextlib import contextmanager
-from config import load_config
+from lib.config import configdb
 from fastapi import HTTPException
 from psycopg2 import pool
 from pypika import PostgreSQLQuery as Query
 from pypika import Tuple
 from pypika import Case
 
-pg_pool = pool.ThreadedConnectionPool(1, 50, **load_config())
+pg_pool = pool.ThreadedConnectionPool(1, 50, **configdb())
 
 @contextmanager
 def connection():

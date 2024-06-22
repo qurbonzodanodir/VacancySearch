@@ -1,10 +1,14 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import InsertVacancies,InsertProfession,InsertCompany,UpdateCompany,InsertCategory,DeleteCategory,UpdateCategory,UpdateProfession,UpdateVacancy,InsertSkills,UpdateSkills,InsertCv,UsersRegistration,LoginUser
+from src.models.models import InsertVacancies,InsertProfession,InsertCompany,UpdateCompany,InsertCategory,DeleteCategory,UpdateCategory,UpdateProfession,UpdateVacancy,InsertSkills,UpdateSkills,InsertCv,UsersRegistration,LoginUser,FilterVacancy
 
 # from elasticsearch import Elasticsearch
 
-from connection import connection
+from lib.connection import connection
+from src.models import models
+from fastapi import APIRouter,Depends
+from src.modules import authorization
+import lib.acl as ACL
 import random
 from psycopg2 import sql
 app = FastAPI()
@@ -45,7 +49,17 @@ def get_all_vacancies():
         cur.callproc('vacancy.get_all_vacanies')
         result = cur.fetchone()[0]
 
-    return result    
+    return result   
+
+@app.get('/company/all')
+def get_all_company():
+    result = None 
+    with connection() as cur:
+        cur.callproc('vacancy.selections')
+        result = cur.fetchone()[0]
+
+    return result  
+
 
 
 @app.get('/selections')
@@ -199,14 +213,45 @@ def InsertCv(data:InsertCv):
 # ---------------------------------------------------------------------------------------------------------------    
 
 
-@app.post('/registration')   
-def UsersRegistration(data:UsersRegistration):
-    try:
-        with connection() as cur:
-            cur.execute('call vacancy_user.insert_user(%s,%s,%s,%s,%s)',(data.first_name,data.last_name,data.gender,data.phone_number,data.user_password,))
-            return 'Ok'
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e)) 
+@app.post('/registration')
+async def registration(data: models.RegistrationModel):
+    return await authorization.registration(data)
+
+
+@app.post('/login')
+async def login(data: models.LoginModel):
+    return await authorization.login(data)
+
+
+# @app.post('/registration')   
+# def UsersRegistration(data:UsersRegistration):
+#     try:
+#         with connection() as cur:
+#             cur.execute('call vacancy_user.insert_user(%s,%s,%s,%s,%s)',(data.first_name,data.last_name,data.gender,data.phone_number,data.user_password,))
+#             return 'Ok'
+#     except Exception as e:
+#         raise HTTPException(status_code=500,detail=str(e)) 
     
 
+    
+    
+
+
+@app.post('/vacancy/filter/')
+def filter_vacancy(data: FilterVacancy):
+    try:
+        with connection() as conn:
+             with conn as cur:
+                cur.execute('select vacancy.filter_vacancy(%s, %s, %s, %s, %s)',
+                       (data.company_name,
+                        data.category_name,
+                        data.address,  
+                        data.salary, 
+                        data.type_employment
+                        ))
+                results = cur.fetchall()[0][0]
+             
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
